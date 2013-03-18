@@ -59,7 +59,7 @@
 						</goals>
 						<configuration>
 							<connectionUrl>scm:hg:https://code.google.com/p/liblouisutdml/</connectionUrl>
-							<scmVersion>88cf2189aca5</scmVersion>
+							<scmVersion>ac747b6e6ac7</scmVersion>
 							<scmVersionType>revision</scmVersionType>
 							<skipCheckoutIfExists>true</skipCheckoutIfExists>
 						</configuration>
