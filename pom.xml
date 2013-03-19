@@ -35,6 +35,7 @@
 		<nar.arch.option/>
 		<nar.install_name.option/>
 		<nar.rpath.option/>
+		<nar.jni.option/>
 		<nar.host.option/>
 	</properties>
 	<dependencies>
@@ -85,6 +86,10 @@
 							<layout>org.apache.maven.plugin.nar.NarLayout20</layout>
 							<skipUnpackProcessing>true</skipUnpackProcessing>
 						</configuration>
+					</execution>
+					<execution>
+						<id>default-nar-javah</id>
+						<phase>none</phase>
 					</execution>
 					<execution>
 						<id>default-nar-gnu-resources</id>
@@ -228,7 +233,7 @@
 								sed \
 								-e 's|^\(AC_INIT(liblouisutdml,\).*\(,.*\)$|\1 ${project.version}\2|' \
 								-e '/^AC_INIT.*$/a\
-								CFLAGS="$CFLAGS ${nar.arch.option}"\
+								CFLAGS="$CFLAGS ${nar.arch.option} ${nar.jni.option}"\
 								export PKG_CONFIG_PATH="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig"\
 								' \
 								../../target/checkout/configure.ac > configure.ac
@@ -338,6 +343,7 @@
 			</activation>
 			<properties>
 				<nar.install_name.option>-Wl,-install_name,@loader_path/liblouisutdml.dylib</nar.install_name.option>
+				<nar.jni.option>-I/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers</nar.jni.option>
 			</properties>
 		</profile>
 		<profile>
