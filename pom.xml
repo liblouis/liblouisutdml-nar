@@ -456,13 +456,7 @@
 			</build>
 		</profile>
 		<profile>
-			<id>libxml2</id>
-			<activation>
-				<property>
-					<name>include_libxml2</name>
-					<value>true</value>
-				</property>
-			</activation>
+			<id>download-libxml2</id>
 			<build>
 				<plugins>
 					<plugin>
