@@ -1,4 +1,3 @@
-.DS_Store
-src/gnu
-src/main/java
 target
+.m2
+/.DS_Store

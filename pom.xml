@@ -3,15 +3,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.liblouis</groupId>
 	<artifactId>louisutdml</artifactId>
-	<version>2.5.0</version>
+	<version>2.7.1-SNAPSHOT</version>
 	<packaging>nar</packaging>
 	<name>liblouisutdml-nar</name>
 	<description>liblouisutdml packaged in a NAR (Native ARchive).</description>
 	<url>https://github.com/bertfrees/liblouisutdml-nar</url>
 	<scm>
-		<connection>scm:git:git@github.com:bertfrees/liblouisutdml-nar.git</connection>
-		<developerConnection>scm:git:git@github.com:bertfrees/liblouisutdml-nar.git</developerConnection>
-		<url>git@github.com:bertfrees/liblouisutdml-nar.git</url>
+		<connection>scm:git:git@github.com:liblouis/liblouisutdml-nar.git</connection>
+		<developerConnection>scm:git:git@github.com:liblouis/liblouisutdml-nar.git</developerConnection>
+		<url>git@github.com:liblouis/liblouisutdml-nar.git</url>
 	</scm>
 	<licenses>
 		<license>
@@ -30,12 +30,13 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<liblouis.version>2.5.3</liblouis.version>
+		<liblouis.version>3.10.0</liblouis.version>
 		<libxml2.version>2.7.3</libxml2.version>
 		<nar.arch.option/>
 		<nar.install_name.option/>
 		<nar.rpath.option/>
 		<nar.jni.option/>
+		<nar.libxml2.option/>
 		<nar.host.option/>
 	</properties>
 	<dependencies>
@@ -47,31 +48,56 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<sourceDirectory>${project.build.directory}/generated-sources/java</sourceDirectory>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>com.github.maven-nar</groupId>
+					<artifactId>nar-maven-plugin</artifactId>
+					<version>3.5.3-SNAPSHOT</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.0.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>shell-maven-plugin</artifactId>
+					<version>1.0-beta-1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.19.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.0.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>2.5.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>2.8.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>1.4</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
-				<artifactId>maven-scm-plugin</artifactId>
-				<version>1.8.1</version>
-				<executions>
-					<execution>
-						<id>checkout-sources</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>checkout</goal>
-						</goals>
-						<configuration>
-							<connectionUrl>scm:hg:https://code.google.com/p/liblouisutdml/</connectionUrl>
-							<scmVersion>2282b4fb86f9</scmVersion>
-							<scmVersionType>revision</scmVersionType>
-							<skipCheckoutIfExists>true</skipCheckoutIfExists>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-nar-plugin</artifactId>
-				<version>2.1-SNAPSHOT</version>
+				<groupId>com.github.maven-nar</groupId>
+				<artifactId>nar-maven-plugin</artifactId>
 				<extensions>true</extensions>
 				<configuration>
+					<gnuSourceDirectory>target/generated-sources/liblouisutdml</gnuSourceDirectory>
 					<gnuConfigureArgs>${nar.host.option}</gnuConfigureArgs>
 					<libraries>
 						<library>
@@ -80,10 +106,26 @@
 					</libraries>
 				</configuration>
 				<executions>
+					<!--
+					    validate: nar-validate
+					    initialize: nar-download
+					    generate-sources: nar-unpack
+					    process-sources: nar-gnu-configure
+					    generate-resources: nar-system-generate, nar-vcproj
+					    process-resources: nar-resources, nar-gnu-resources
+					    compile: nar-javah, nar-gnu-make, nar-compile
+						process-classes: nar-gnu-process, nar-process-libraries
+					    generate-test-sources: nar-test-unpack
+						test-compile: nar-testCompile
+						test: nar-test
+						prepare-package: nar-prepare-package
+						package: nar-package,
+						integration-test: nar-integration-test
+					-->
 					<execution>
 						<id>default-nar-unpack</id>
 						<configuration>
-							<layout>org.apache.maven.plugin.nar.NarLayout20</layout>
+							<layout>com.github.maven_nar.NarLayout20</layout>
 							<skipUnpackProcessing>true</skipUnpackProcessing>
 						</configuration>
 					</execution>
@@ -94,6 +136,33 @@
 					<execution>
 						<id>default-nar-gnu-resources</id>
 						<phase>none</phase>
+					</execution>
+					 <!-- bind nar-gnu-configure to compile phase instead of generate-sources -->
+					<execution>
+						<id>default-nar-gnu-make</id>
+						<phase>none</phase>
+					</execution>
+					<execution>
+						<id>default-nar-compile</id>
+						<phase>none</phase>
+					</execution>
+					<execution>
+						<id>default-nar-gnu-configure</id>
+						<phase>compile</phase>
+					</execution>
+					<execution>
+						<id>nar-gnu-make</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>nar-gnu-make</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>nar-compile</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>nar-compile</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -107,11 +176,11 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>src/gnu</outputDirectory>
+							<outputDirectory>${project.build.directory}/generated-sources/liblouisutdml</outputDirectory>
 							<overwrite>true</overwrite>
 							<resources>
 								<resource>
-									<directory>target/checkout</directory>
+									<directory>src/liblouisutdml</directory>
 								</resource>
 							</resources>
 						</configuration>
@@ -123,11 +192,11 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>src/main/java</outputDirectory>
+							<outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
 							<overwrite>true</overwrite>
 							<resources>
 								<resource>
-									<directory>target/checkout/java/src</directory>
+									<directory>src/liblouisutdml/java/src</directory>
 									<includes>
 										<include>**/*.java</include>
 									</includes>
@@ -136,19 +205,37 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>copy-results</id>
+						<id>copy-results-1</id>
 						<phase>process-classes</phase>
 						<goals>
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>target/nar/louisutdml-${project.version}-${nar.aol}-shared/lib/${nar.aol}/shared</outputDirectory>
+							<outputDirectory>${project.build.directory}/nar/louisutdml-${project.version}-${nar.aol}-shared/lib/${nar.aol}/shared</outputDirectory>
 							<resources>
 								<resource>
-									<directory>target/nar/gnu/${nar.aol}/target/lib</directory>
+									<directory>${project.build.directory}/nar/gnu/${nar.aol}/target/lib</directory>
 									<includes>
 										<include>*.dll.a</include>
 										<include>pkgconfig/*</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-results-2</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/nar/louisutdml-${project.version}-noarch/</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/nar/gnu/x86_64-MacOSX-gpp/target/</directory>
+									<includes>
+										<include>share/**/*</include>
 									</includes>
 								</resource>
 							</resources>
@@ -167,7 +254,7 @@
 						</goals>
 						<configuration>
 							<tasks>
-								<replace dir="target/nar/lib/${nar.aol}/shared/pkgconfig">
+								<replace dir="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig">
 									<replacefilter token="@NAR@" value="${project.build.directory}/nar"/>
 								</replace>
 							</tasks>
@@ -181,7 +268,7 @@
 						</goals>
 						<configuration>
 							<tasks>
-								<fixcrlf srcDir="src/main/java" includes="**/*.java"/>
+								<fixcrlf srcDir="${project.build.directory}/generated-sources/java" includes="**/*.java"/>
 							</tasks>
 						</configuration>
 					</execution>
@@ -193,8 +280,8 @@
 						</goals>
 						<configuration>
 							<tasks>
-								<copy todir="target/test-classes" flatten="true">
-									<fileset dir="target/nar">
+								<copy todir="${project.build.directory}/test-classes" flatten="true">
+									<fileset dir="${project.build.directory}/nar">
 										<include name="**/lib/${nar.aol}/shared/*.so"/>
 										<include name="**/lib/${nar.aol}/shared/*.dylib"/>
 										<include name="**/bin/${nar.aol}/file2brl"/>
@@ -221,29 +308,29 @@
 							<goal>shell</goal>
 						</goals>
 						<configuration>
-							<workDir>src/gnu</workDir>
+							<workDir>${project.build.directory}/generated-sources/liblouisutdml</workDir>
 							<script>
 								#!/bin/sh
 								sed \
 								-e 's|^\(liblouisutdml_la_LDFLAGS =\)\(.*\)$|\1 ${nar.install_name.option} ${nar.rpath.option} -avoid-version \2|' \
-								../../target/checkout/liblouisutdml/Makefile.am > liblouisutdml/Makefile.am
+								../../../src/liblouisutdml/liblouisutdml/Makefile.am > liblouisutdml/Makefile.am
 								sed \
 								-e 's|\(^AM_LDFLAGS =\)\(.*\)$|\1 ${nar.rpath.option} \2|' \
-								../../target/checkout/tools/Makefile.am > tools/Makefile.am
+								../../../src/liblouisutdml/tools/Makefile.am > tools/Makefile.am
 								sed \
 								-e 's|^\(AC_INIT(liblouisutdml,\).*\(,.*\)$|\1 ${project.version}\2|' \
 								-e '/^AC_INIT.*$/a\
-								CFLAGS="$CFLAGS ${nar.arch.option} ${nar.jni.option}"\
+								CFLAGS="$CFLAGS ${nar.arch.option} ${nar.jni.option} ${nar.libxml2.option}"\
 								export PKG_CONFIG_PATH="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig"\
 								' \
-								../../target/checkout/configure.ac > configure.ac
+								../../../src/liblouisutdml/configure.ac > configure.ac
 								sed \
 								-e '/^prefix=/d' \
 								-e '/^exec_prefix=/d' \
 								-e '/^lbudir=/d' \
 								-e 's|@libdir@|@NAR@/lib/${nar.aol}/shared|' \
 								-e 's|@includedir@|@NAR@/include|' \
-								../../target/checkout/liblouisutdml.pc.in > liblouisutdml.pc.in
+								../../../src/liblouisutdml/liblouisutdml.pc.in > liblouisutdml.pc.in
 							</script>
 						</configuration>
 					</execution>
@@ -254,31 +341,13 @@
 							<goal>shell</goal>
 						</goals>
 						<configuration>
-							<workDir>target/test-classes</workDir>
+							<workDir>${project.build.directory}/test-classes</workDir>
 							<script>
 								#!/bin/sh
 								chmod +x file2brl
 								./file2brl -f ./config.cfg input.xml
 							</script>
 						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-patch-plugin</artifactId>
-				<configuration>
-					<patchDirectory>src/main/patches</patchDirectory>
-					<patches>
-						<patch>java.patch</patch>
-					</patches>
-				</configuration>
-				<executions>
-					<execution>
-						<id>process-java</id>
-						<phase>process-sources</phase>
-						<goals>
-							<goal>apply</goal>
-						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -292,19 +361,6 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<configuration>
-					<filesets>
-						<fileset>
-							<directory>src/gnu</directory>
-						</fileset>
-						<fileset>
-							<directory>src/main/java</directory>
-						</fileset>
-					</filesets>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -344,6 +400,12 @@
 			<properties>
 				<nar.install_name.option>-Wl,-install_name,@loader_path/liblouisutdml.dylib</nar.install_name.option>
 				<nar.jni.option>-I/System/Library/Frameworks/JavaVM.framework/Headers</nar.jni.option>
+				<!--
+				    FIXME: This depends on the exact location where the libxml2 header files where
+				    installed. Homebrew refused to symlink this directory to
+				    /usr/local/include/libxml2 because libxml2 is "macOS-provided software".
+				-->
+				<nar.libxml2.option>-I/usr/local/Cellar/libxml2/2.9.5/include/libxml2</nar.libxml2.option>
 			</properties>
 		</profile>
 		<profile>
@@ -357,7 +419,8 @@
 			<build>
 				<plugins>
 					<plugin>
-						<artifactId>maven-nar-plugin</artifactId>
+						<groupId>com.github.maven-nar</groupId>
+						<artifactId>nar-maven-plugin</artifactId>
 						<configuration>
 							<os>${host.os}</os>
 							<linker>
@@ -388,7 +451,7 @@
 											<version>${libxml2.version}</version>
 											<classifier>noarch</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 										<artifactItem>
 											<groupId>org.daisy.libs</groupId>
@@ -396,7 +459,7 @@
 											<version>${libxml2.version}</version>
 											<classifier>${nar.aol}-shared</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 									</artifactItems>
 								</configuration>
@@ -414,7 +477,7 @@
 											<artifactId>louis</artifactId>
 											<classifier>${nar.aol}-executable</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 										<artifactItem>
 											<groupId>org.daisy.libs</groupId>
@@ -422,7 +485,7 @@
 											<version>${libxml2.version}</version>
 											<classifier>${nar.aol}-executable</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 									</artifactItems>
 								</configuration>
@@ -443,7 +506,7 @@
 									<goal>shell</goal>
 								</goals>
 								<configuration>
-									<workDir>target/test-classes</workDir>
+									<workDir>${project.build.directory}/test-classes</workDir>
 									<script>
 										#!/bin/sh
 										wine file2brl.exe -f .\\config.cfg input.xml
@@ -476,7 +539,7 @@
 											<version>${libxml2.version}</version>
 											<classifier>noarch</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 										<artifactItem>
 											<groupId>org.daisy.libs</groupId>
@@ -484,7 +547,7 @@
 											<version>${libxml2.version}</version>
 											<classifier>${nar.aol}-shared</classifier>
 											<type>nar</type>
-											<outputDirectory>target/nar</outputDirectory>
+											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 									</artifactItems>
 								</configuration>
@@ -501,7 +564,6 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.4</version>
 						<configuration>
 							<useAgent>true</useAgent>
 						</configuration>
@@ -519,16 +581,6 @@
 			</build>
 		</profile>
 	</profiles>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>bertfrees-github-snapshots</id>
-			<url>http://bertfrees.github.com/snapshots</url>
-		</pluginRepository>
-		<pluginRepository>
-			<id>duns-maven-snapshots</id>
-			<url>http://duns.github.com/maven-snapshots</url>
-		</pluginRepository>
-	</pluginRepositories>
 	<distributionManagement>
 		<repository>
 			<id>sonatype-nexus-staging</id>
