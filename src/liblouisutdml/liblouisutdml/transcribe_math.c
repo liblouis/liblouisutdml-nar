@@ -44,7 +44,7 @@ transcribe_math (xmlNode * node, int action)
   StyleType *style;
   xmlNode *child;
   int branchCount = 0;
-  logMessage(LOU_LOG_INFO, "Begin transcribe_math");
+  logMessage(LOU_LOG_DEBUG, "Begin transcribe_math");
   if (node == NULL)
     return 0;
   if (action == 0)
@@ -113,7 +113,7 @@ transcribe_math (xmlNode * node, int action)
   pop_sem_stack ();
   if (action == 0)
     mathTrans ();
-  logMessage(LOU_LOG_INFO, "Finish transcribe_math");
+  logMessage(LOU_LOG_DEBUG, "Finish transcribe_math");
   return 1;
 }
 
@@ -130,7 +130,7 @@ mathTrans ()
   translationLength = ud->text_length;
   if (ud->format_for == utd)
     {
-      ud->text_buffer[ud->text_length++] = ENDSEGMENT;
+      ud->text_buffer[ud->text_length++] = LOU_ENDSEGMENT;
       translationLength++;
       k = lou_translate (ud->mathexpr_table_name,
 			 ud->text_buffer,

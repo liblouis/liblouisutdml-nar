@@ -162,6 +162,7 @@ charcpy (char *to, const char *from, int length)
 }
 
 static char *makeRomanNumber (int n);
+static char *makeRomanCapsNumber (int n);
 static int utd_start ();
 static int utd_finish ();
 static int utd_insert_translation (const char *table);
@@ -171,16 +172,8 @@ static void utd_pagebreak (xmlNode * node, char *printPageNumber, int length);
 static int utd_startStyle ();
 static int utd_styleBody ();
 static int utd_finishStyle ();
-static const TranslationTableHeader *firstTableHeader;
+static const void *firstTableHeader;
 static const char *firstTableName;
-
-static TranslationTableRule *
-getLiblouisRule (TranslationTableOffset offset)
-{
-  if (offset == 0)
-    return NULL;
-  return (TranslationTableRule *) & firstTableHeader->ruleArea[offset];
-}
 
 int
 start_document ()
@@ -423,7 +416,7 @@ utf8_string_to_wc (const unsigned char *inStr, int *inSize, widechar *
   while (in < *inSize)
     {
       ch = inStr[in++] & 0xff;
-      if (ch < 128 || ud->input_encoding == ascii8)
+      if (ch < 128 || ud->input_encoding == lbu_ascii8)
 	{
 	  outstr[out++] = (widechar) ch;
 	  if (out >= *outSize)
@@ -569,7 +562,7 @@ utf8ToWc (const unsigned char *utf8str, int *inSize, widechar *
   while (in < *inSize)
     {
       ch = utf8str[in++] & 0xff;
-      if (ch < 128 || ud->input_encoding == ascii8)
+      if (ch < 128 || ud->input_encoding == lbu_ascii8)
 	{
 	  utfwcstr[out++] = (widechar) ch;
 	  if (out >= *outSize)
@@ -744,7 +737,7 @@ translate_possibly_prehyphenated (const char *table,
   static int tmp_indices_2[2 * BUFSIZE];
   int tmp_outlen;
   int k;
-  if (ud->hyphenate == 2)
+  if (ud->hyphenate & 2) // pre-hyphenated
     {
       remove_soft_hyphens (inbuf, *inlen, tmp_outbuf, &tmp_outlen,
 			   tmp_indices_1);
@@ -1160,7 +1153,7 @@ insert_text_string (xmlNode * node, xmlChar * str)
     }
   insert_utf8 (str);
   if (ud->format_for == utd)
-    ud->text_buffer[ud->text_length++] = ENDSEGMENT;
+    ud->text_buffer[ud->text_length++] = LOU_ENDSEGMENT;
   return;
 }
 
@@ -1251,8 +1244,15 @@ getBraillePageString ()
 	sprintf (brlPageString, "p%d", ud->braille_page_number);
       break;
     case roman:
-      strcpy (brlPageString, ud->letsign);
+      strcpy (brlPageString, " ");
+      strcat (brlPageString, ud->letsign);
       strcat (brlPageString, makeRomanNumber (ud->braille_page_number));
+      translationLength = strlen (brlPageString);
+      break;
+    case romancaps:
+      strcpy (brlPageString, " ");
+      strcat (brlPageString, ud->letsign);
+      strcat (brlPageString, makeRomanCapsNumber (ud->braille_page_number));
       translationLength = strlen (brlPageString);
       break;
     }
@@ -1265,6 +1265,14 @@ getBraillePageString ()
 			    &translationLength, ud->braille_page_string,
 			    &translatedLength, NULL, NULL, 0))
     return 0;
+  switch (ud->cur_brl_page_num_format) {
+    case roman: case romancaps:
+      translatedLength--;
+      for (k = 0; k < translatedLength; k++)
+        ud->braille_page_string[k] = ud->braille_page_string[k+1];
+      ud->braille_page_string[k] = 0;
+      break;
+  }
   ud->braille_page_string[translatedLength] = 0;
   widecharcpy (&(pageNumberString[pageNumberLength]), ud->braille_page_string,
 	       translatedLength);
@@ -1313,9 +1321,67 @@ makeRomanNumber (int n)
     "viii",
     "ix"
   };
-  if (n <= 0 || n > 1000)
+  if (n <= 0)
     return NULL;
   romNum[0] = 0;
+  while (n>1000) {
+    strcat (romNum, hundreds[10]);
+    n = n-1000;
+  }
+  strcat (romNum, hundreds[n / 100]);
+  strcat (romNum, tens[(n / 10) % 10]);
+  strcat (romNum, units[n % 10]);
+  return romNum;
+}
+
+static char *
+makeRomanCapsNumber (int n)
+{
+  static char romNum[40];
+  static const char *hundreds[] = {
+    "",
+    "C",
+    "CC",
+    "CCC",
+    "CD",
+    "D",
+    "DC",
+    "DCC",
+    "DCCC",
+    "CM",
+    "M"
+  };
+  static const char *tens[] = {
+    "",
+    "X",
+    "XX",
+    "XXX",
+    "XL",
+    "L",
+    "LX",
+    "LXX",
+    "LXXX",
+    "XC"
+  };
+  static const char *units[] = {
+    "",
+    "I",
+    "II",
+    "III",
+    "IV",
+    "V",
+    "VI",
+    "VII",
+    "VIII",
+    "IX"
+  };
+  if (n <= 0)
+    return NULL;
+  romNum[0] = 0;
+  while (n>1000) {
+    strcat (romNum, hundreds[10]);
+    n = n-1000;
+  }
   strcat (romNum, hundreds[n / 100]);
   strcat (romNum, tens[(n / 10) % 10]);
   strcat (romNum, units[n % 10]);
@@ -2014,8 +2080,11 @@ hyphenatex (int lastBlank, int lineEnd, int *breakAt, int *insertHyphen)
   int textWordStart, textWordLength;
   int const textLength = ud->sync_text_length;
   widechar *const textBuffer = ud->sync_text_buffer;
+  int minSyllableLength = MIN_SYLLABLE_LENGTH;
+  if (ud->min_syllable_length > 0)
+      minSyllableLength = ud->min_syllable_length;
   
-  if (ud->hyphenate != 1 && ud->hyphenate != 2)
+  if (!ud->hyphenate)
     return 0;
   
   // Don't break if not enough characters remain on next line
@@ -2050,11 +2119,11 @@ hyphenatex (int lastBlank, int lineEnd, int *breakAt, int *insertHyphen)
   // inserted
   *insertHyphen = 0;
   
-  for (k = minimum(lineEnd - wordStart, wordLength - MIN_SYLLABLE_LENGTH);
-       k > MIN_SYLLABLE_LENGTH;
+  for (k = minimum(lineEnd - wordStart, wordLength - minSyllableLength);
+       k > minSyllableLength;
        k--)
     {
-      if (ud->in_sync && ud->hyphenate == 2)
+      if (ud->in_sync && ud->hyphenate & 2)
 	{
 	  if (textBuffer[positionsArray[wordStart + k] - 1] == ZWSP)
 	    {
@@ -2062,7 +2131,7 @@ hyphenatex (int lastBlank, int lineEnd, int *breakAt, int *insertHyphen)
 	      return 1;
 	    }
 	}
-      else
+      if (ud->hyphenate & 1)
 	{
 	  if(translatedBuffer[wordStart + k - 1] == *ud->lit_hyphen)
 	    {
@@ -2081,19 +2150,26 @@ hyphenatex (int lastBlank, int lineEnd, int *breakAt, int *insertHyphen)
   // Derive hyphen positions in translated buffer from those in text buffer
   if (ud->in_sync)
     {
+      for (k = 0; k < textWordLength; k++)
+	textHyphens[k] = '0';
       switch (ud->hyphenate)
 	{
+	case 2:
+	case 3: {
+	  int containsShy = 0;
+	  for (k = 1; k < textWordLength; k++)
+	    if (textBuffer[textWordStart + k - 1] == SHY) {
+	      textHyphens[k] = '1';
+	      containsShy = 1;
+	    }
+	  if (ud->hyphenate == 2 || containsShy) break;
+	  // if "hyphenate yes" and word contains no SHY
+	}
 	case 1:
 	  if (!lou_hyphenate (ud->main_braille_table,
 			      &textBuffer[textWordStart], textWordLength,
 			      textHyphens, 0))
 	    return 0;
-	  break;
-	case 2:
-	  textHyphens[0] = '0';
-	  for (k = 1; k < textWordLength; k++)
-	    textHyphens[k] =
-	      (textBuffer[textWordStart + k - 1] == SHY) ? '1' : '0';
 	  break;
 	}
       for (k = 1; k < wordLength; k++)
@@ -2107,8 +2183,8 @@ hyphenatex (int lastBlank, int lineEnd, int *breakAt, int *insertHyphen)
 			   hyphens, 1))
     return 0;
   
-  for (k = minimum(lineEnd - wordStart, wordLength - MIN_SYLLABLE_LENGTH) - 1;
-       k > MIN_SYLLABLE_LENGTH;
+  for (k = minimum(lineEnd - wordStart - 1, wordLength - minSyllableLength);
+       k >= minSyllableLength;
        k--)
     if (hyphens[k] == '1')
       {
@@ -3429,7 +3505,7 @@ back_translate_braille_string ()
       ud->output_encoding = lbu_utf8;
     }
   else
-    ud->output_encoding = ascii8;
+    ud->output_encoding = lbu_ascii8;
   while (charsProcessed < ud->inlen)
     {
       ch = ud->inbuf[charsProcessed++];
@@ -3484,7 +3560,7 @@ back_translate_braille_string ()
       if (!insertCharacters (ud->lineEnd, strlen (ud->lineEnd)))
 	return 0;
       writeOutbuf ();
-      ud->output_encoding = ascii8;
+      ud->output_encoding = lbu_ascii8;
     }
   logMessage(LOU_LOG_DEBUG, "Finish back_translate_braille_string");
   return 1;
@@ -3515,7 +3591,7 @@ back_translate_file ()
       ud->output_encoding = lbu_utf8;
     }
   else
-    ud->output_encoding = ascii8;
+    ud->output_encoding = lbu_ascii8;
   while ((ch = fgetc (ud->inFile)) != EOF)
     {
       if (ch == 13)
@@ -3569,7 +3645,7 @@ back_translate_file ()
       if (!insertCharacters (ud->lineEnd, strlen (ud->lineEnd)))
 	return 0;
       writeOutbuf ();
-      ud->output_encoding = ascii8;
+      ud->output_encoding = lbu_ascii8;
     }
   return 1;
 }
@@ -3642,23 +3718,20 @@ addBoxline(const char *boxChar, int beforeAfter)
 {
   int k;
   int availableCells = 0;
-  widechar wTmpBuf = (widechar)boxChar[0];
-  widechar dots;
   if (ud->format_for == utd)
     return utd_addBoxline(boxChar, beforeAfter);
   logMessage(LOU_LOG_DEBUG, "Begin addBoxline");
   logMessage(LOU_LOG_DEBUG, "styleSpec->node->name=%s", styleSpec->node->name);
+  availableCells = startLine();
   while (availableCells != ud->cells_per_line)
   {
     finishLine();
     availableCells = startLine();
   }
   logMessage(LOU_LOG_DEBUG, "availableCells=%d", availableCells);
-  if (!lou_charToDots(ud->main_braille_table, &wTmpBuf, &dots, 1, 0))
-    return 0;
   for (k = 0; k < availableCells; k++)
   {
-    ud->outbuf1[k+ud->outbuf1_len_so_far] = dots;
+    ud->outbuf1[k+ud->outbuf1_len_so_far] = *boxChar;
   }
   ud->outbuf1_len_so_far += availableCells;
   cellsWritten += availableCells;
@@ -3833,9 +3906,9 @@ start_style (StyleType * curStyle, xmlNode * node)
   styleSpec->curLeftMargin = ud->style_left_margin;
   styleSpec->curRightMargin = ud->style_right_margin;
   styleSpec->curFirstLineIndent = ud->style_first_line_indent;
+  startStyle ();
   if (node && !node->children)
     return 1;
-  startStyle ();
   styleSpec->status = startBody;
   logMessage(LOU_LOG_DEBUG, "Finish start_style");
   return 1;
@@ -3858,9 +3931,9 @@ end_style ()
       if (style->runningHead)
 	set_runninghead_string (ud->translated_buffer, ud->translated_length);
       styleBody ();
-      if (!ud->after_contents)
-	finishStyle ();
     }
+  if (!ud->after_contents)
+      finishStyle ();
   memcpy (&prevStyleSpec, styleSpec, sizeof (prevStyleSpec));
   prevStyle = prevStyleSpec.style;
   ud->style_top--;
@@ -3880,15 +3953,15 @@ end_style ()
 
 /* Routines for Unified Tactile Ducument Markup Language (UTDML) */
 
-#define SPACE B16
-/* Dot patterns must include B16 and be enclosed in parentheses.*/
-#define NBSP (B16 | B10)
-#define CR (B16 | B11)
-#define HYPHEN (B16 | B3 | B6)
-#define ESCAPE (B16 | B11 | B1)
-#define CDOTS (B16 | B1 | B4)
-#define EDOTS (B16 | B1 |  B5)
-#define RDOTS (B16 | B1 | B2 | B3 | B5)
+#define SPACE LOU_DOTS
+/* Dot patterns must include LOU_DOTS and be enclosed in parentheses.*/
+#define NBSP (LOU_DOTS | LOU_DOT_10)
+#define CR (LOU_DOTS | LOU_DOT_11)
+#define HYPHEN (LOU_DOTS | LOU_DOT_3 | LOU_DOT_6)
+#define ESCAPE (LOU_DOTS | LOU_DOT_11 | LOU_DOT_1)
+#define CDOTS (LOU_DOTS | LOU_DOT_1 | LOU_DOT_4)
+#define EDOTS (LOU_DOTS | LOU_DOT_1 |  LOU_DOT_5)
+#define RDOTS (LOU_DOTS | LOU_DOT_1 | LOU_DOT_2 | LOU_DOT_3 | LOU_DOT_5)
 
 static const char *currentTable;
 static char currentTableName[MAXNAMELEN];
@@ -4014,7 +4087,7 @@ static int
 handleChar (int ch, unsigned char *buf, int *posx)
 {
   int pos = *posx;
-  if (ch > 127 && ud->input_encoding == ascii8)
+  if (ch > 127 && ud->input_encoding == lbu_ascii8)
     {
       buf[pos++] = 0xc3;
       buf[pos++] = ch & 0x3f;
@@ -4437,7 +4510,7 @@ checkTextFragment (widechar * text, int length)
   for (k = 0; k < length; k++)
     {
       dots = text[k];
-      if ((dots & (B7 | B8)))
+      if ((dots & (LOU_DOT_7 | LOU_DOT_8)))
 	lineWidth = ud->wide_line;
       if (dots == NBSP)
 	text[k] = SPACE;
@@ -4710,24 +4783,11 @@ utd_getPrintPageString ()
 {
   widechar printPageString[40];
   int k;
-  TranslationTableRule *rule;
   for (k = 0; ud->print_page_number[k]; k++)
     printPageString[k] = ud->print_page_number[k];
   setOrigTextWidechar (&pageNumber, printPageString, k);
   translateShortBrlOnly (&pageNumber);
-  rule = getLiblouisRule (firstTableHeader->letterSign);
-  if (rule != NULL)
-    {
-      for (k = 0; k < pageNumber.transTextLength; k++)
-	if (pageNumber.transText[k] == rule->charsdots[0])
-	  {
-	    pageNumber.transText[k] = SPACE;
-	    addSpaces (&pageNumber, 2);
-	    break;
-	  }
-    }
-  else
-    addSpaces (&pageNumber, 3);
+  addSpaces (&pageNumber, 3);
   ud->print_page_number[0]++;
   return 1;
 }
@@ -4834,10 +4894,10 @@ assignTranslations ()
   while (curPos < translatedLength && curBrlNode != NULL &&
 	 nextSegment < translatedLength)
     {
-      if (translatedBuffer[curPos] == ENDSEGMENT || nextSegment == 0)
+      if (translatedBuffer[curPos] == LOU_ENDSEGMENT || nextSegment == 0)
 	{
 	  int nextPos = nextSegment;
-	  while (translatedBuffer[nextPos] != ENDSEGMENT && nextPos <
+	  while (translatedBuffer[nextPos] != LOU_ENDSEGMENT && nextPos <
 		 translatedLength)
 	    nextPos++;
 	  makeDotsTextNode (curBrlNode, &translatedBuffer[nextSegment],
@@ -4899,14 +4959,14 @@ assignIndices (xmlNode * startNode, int startPos)
   while (curPos < ud->translated_length && curBrlNode != NULL &&
 	 nextSegment < ud->translated_length)
     {
-      if (ud->translated_buffer[curPos] == ENDSEGMENT || nextSegment ==
+      if (ud->translated_buffer[curPos] == LOU_ENDSEGMENT || nextSegment ==
 	  startPos)
 	{
 	  int indexPos = nextSegment;
 	  int kk = 0;
-	  if (ud->translated_buffer[curPos] == ENDSEGMENT)
+	  if (ud->translated_buffer[curPos] == LOU_ENDSEGMENT)
 	    firstIndex = indices[curPos + 1];
-	  while (ud->translated_buffer[indexPos] != ENDSEGMENT &&
+	  while (ud->translated_buffer[indexPos] != LOU_ENDSEGMENT &&
 		 indexPos < ud->translated_length)
 	    {
 	      char pos[MAXNUMLEN];
@@ -5012,7 +5072,7 @@ utd_insert_text (xmlNode * node, int length)
       for (k = 0; k < ud->text_length; k++)
 	indices[ud->translated_length + k] = k;
       ud->translated_length += ud->text_length;
-      ud->translated_buffer[ud->translated_length++] = ENDSEGMENT;
+      ud->translated_buffer[ud->translated_length++] = LOU_ENDSEGMENT;
       ud->text_length = 0;
       ud->in_sync = 0;
       return;
@@ -5039,7 +5099,7 @@ utd_insert_text (xmlNode * node, int length)
     }
   else
     link_brl_node (xmlAddNextSibling (node, newNode));
-  ud->text_buffer[ud->text_length++] = ENDSEGMENT;
+  ud->text_buffer[ud->text_length++] = LOU_ENDSEGMENT;
   return;
 }
 
@@ -5276,12 +5336,12 @@ utd_doOrdinaryText ()
 	       translatedLength && (dots =
 				    translatedBuffer[charactersWritten +
 						     cellsToWrite]) !=
-	       ENDSEGMENT; cellsToWrite++)
+	       LOU_ENDSEGMENT; cellsToWrite++)
 	    if (dots == SPACE)
 	      lastSpace = cellsToWrite;
 	  if (cellsToWrite == availableCells)
 	    newLineNeeded = 1;
-	  if (dots != ENDSEGMENT && lastSpace != 0)
+	  if (dots != LOU_ENDSEGMENT && lastSpace != 0)
 	    cellsToWrite = lastSpace + 1;
 	  cellsOnLine += cellsToWrite;
 	  availableCells -= cellsToWrite;
@@ -5307,7 +5367,7 @@ utd_doOrdinaryText ()
 	      newLineNeeded = 1;
 	    }
 	}
-      while (dots != ENDSEGMENT && charactersWritten < translatedLength);
+      while (dots != LOU_ENDSEGMENT && charactersWritten < translatedLength);
       charactersWritten++;
       prevBrlNode = brlNode;
       brlNode = brlNode->_private;

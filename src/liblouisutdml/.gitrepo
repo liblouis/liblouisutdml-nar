@@ -7,5 +7,5 @@
 	remote = git@github.com:liblouis/liblouisutdml.git
 	branch = master
 	commit = 948a11ab23f2aa9eafe7b2dafae57f0b8ea4e1d1
-	parent = 07ce4db613a921e03e1e1caabe8e0bc87fb058de
+	parent = 39e35f1fbaf3e01b5f010e9f6e90d6545f424596
 	cmdver = 0.3.1

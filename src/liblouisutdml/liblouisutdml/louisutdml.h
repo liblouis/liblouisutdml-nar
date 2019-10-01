@@ -33,7 +33,6 @@
 #define liblouisutdml_h
 #include <libxml/parser.h>
 #include "liblouisutdml.h"
-#include <internal.h>
 #include "sem_enum.h"
 
 typedef enum
@@ -63,7 +62,8 @@ typedef enum
   normal = 0,
   blank = 1,
   p = 2,
-  roman = 3
+  roman = 3,
+  romancaps = 4
 } BrlPageNumFormat;
 
 typedef struct
@@ -220,6 +220,7 @@ typedef struct
   int print_page_number_at;
   int braille_page_number_at;
   int hyphenate;
+  int min_syllable_length;
   int internet_access;
   int new_entries;
   int doc_new_entries;
@@ -430,5 +431,4 @@ void do_utdxxxximg (xmlNode *node);
 
 void logWidecharBuf(logLevels level, const char *msg, const widechar *wbuf, int wlen);
 
-// void logMessage(logLevels level, const char *format, ...);
 #endif /*louisutdml_h */

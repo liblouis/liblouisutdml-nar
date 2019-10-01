@@ -36,7 +36,6 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <internal.h>
 #include "louisutdml.h"
 #include "sem_names.h"
 #include <ctype.h>
@@ -241,7 +240,7 @@ findTable (lbu_FileInfo * nested)
   if (trialPath[0] == 0)
     {
       if (lou_getTable (nested->value) != NULL)
-	strcpy (trialPath, _lou_getLastTableList());
+	strcpy (trialPath, nested->value);
     }
   if (trialPath[0] == 0)
     {
@@ -715,7 +714,8 @@ compileConfig (lbu_FileInfo * nested)
     "57",
 	"Endnotes",
 	"58",
-// available    "59",
+    "minSyllableLength",
+    "59",
     "macro",
     "60",
     "style",
@@ -852,8 +852,12 @@ compileConfig (lbu_FileInfo * nested)
 	    }
 	  break;
 	case 13:
-	  if ((k = checkValues (nested, hyphenationModes)) != NOTFOUND)
+	  if ((k = checkValues (nested, hyphenationModes)) != NOTFOUND) {
 	    ud->hyphenate = k;
+	    if (ud->hyphenate == 1)
+	      // "yes" -> combination of "yes" and "pre"
+	      ud->hyphenate += 2;
+	  }
 	  break;
 	case 14:
 	  if ((k = checkValues (nested, encodings)) != NOTFOUND)
@@ -1078,7 +1082,9 @@ compileConfig (lbu_FileInfo * nested)
 	  if ((k = checkValues (nested, yesNo)) != NOTFOUND)
 	    ud->endnotes = k;
 	  break;
-// available	case 59:
+	case 59:
+	  ud->min_syllable_length = atoi (nested->value);
+	  break;
 	case 60:
 	  new_macro (nested->value, nested->value2);
 	  break;
@@ -1159,6 +1165,8 @@ compileConfig (lbu_FileInfo * nested)
 	      "2",
 	      "roman",
 	      "3",
+	      "romancaps",
+	      "4",
 	      NULL
 	    };
 	    StyleType *style;
@@ -1313,7 +1321,7 @@ read_configuration_file (const char *configFileList, const char
   char subFile[MAXNAMELEN];
   int listLength;
   int currentListPos = 0;
-  logMessage(LOU_LOG_INFO, "Begin read_configuration_file");
+  logMessage(LOU_LOG_DEBUG, "Begin read_configuration_file");
   errorCount = 0;
   fatalErrorCount = 0;
   /*Process logFileName later, after writeablePath is set */
@@ -1358,7 +1366,7 @@ read_configuration_file (const char *configFileList, const char
       style->action = k;
     }
   ud->input_encoding = lbu_utf8;
-  ud->output_encoding = ascii8;
+  ud->output_encoding = lbu_ascii8;
   *ud->print_page_number = '_';
   *ud->print_page_number_first = '_';
   ud->string_escape = ',';
@@ -1474,6 +1482,10 @@ read_configuration_file (const char *configFileList, const char
       ud->back_text = textDevice;
       ud->back_line_length = 70;
     }
-  logMessage(LOU_LOG_INFO, "Finish read_configuration_file");
+  ud->outbuf2_enabled = ud->braille_pages &&
+      ud->print_pages &&
+      ud->print_page_number_range &&
+      ud->print_page_number_at;
+  logMessage(LOU_LOG_DEBUG, "Finish read_configuration_file");
   return 1;
 }

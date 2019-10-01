@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.68)
-AC_INIT([liblouisutdml], [2.7.1], [liblouis-liblouisxml@freelists.org], [liblouisutdml], [http://www.liblouis.org])
+AC_INIT([liblouisutdml], [2.8.0], [liblouis-liblouisxml@freelists.org], [liblouisutdml], [http://www.liblouis.org])
 AC_CONFIG_SRCDIR([liblouisutdml/semantics.c])
 AC_CONFIG_HEADER([liblouisutdml/config.h])
 
@@ -10,7 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
 
 # increment if the interface has additions, changes, removals.
-LIBLOUISUTDML_CURRENT=9
+LIBLOUISUTDML_CURRENT=10
 
 # increment any time the source changes; set to
 # 0 if you increment CURRENT
@@ -19,7 +19,7 @@ LIBLOUISUTDML_REVISION=0
 # increment if any interfaces have been added; set to 0
 # if any interfaces have been changed or removed. removal has
 # precedence over adding, so set to 0 if both happened.
-LIBLOUISUTDML_AGE=0
+LIBLOUISUTDML_AGE=1
 
 AC_SUBST(LIBLOUISUTDML_CURRENT)
 AC_SUBST(LIBLOUISUTDML_REVISION)
@@ -123,10 +123,12 @@ AC_CONFIG_FILES([Makefile
 	liblouisutdml/Makefile
 	liblouisutdml.pc
 	tests/Makefile
+	tests/boxline.test/Makefile
 	tests/firstLineIndent.test/Makefile
 	tests/footer_01.test/Makefile
 	tests/footer_02.test/Makefile
 	tests/hyphenation.test/Makefile
+	tests/minSyllableWidth.test/Makefile
 	tests/mixed_content.test/Makefile
 	tests/orphanControl_01.test/Makefile
 	tests/orphanControl_02.test/Makefile
@@ -137,6 +139,89 @@ AC_CONFIG_FILES([Makefile
 	tests/printPageNumberRange_02.test/Makefile
 	tests/printPageNumberRange_03.test/Makefile
 	tests/endNotes.test/Makefile
+	tests/mathml_nemeth/Makefile
+	tests/mathml_nemeth/general_001.test/Makefile
+	tests/mathml_nemeth/general_002.test/Makefile
+	tests/mathml_nemeth/general_003.test/Makefile
+	tests/mathml_nemeth/mfrac_01.test/Makefile
+	tests/mathml_nemeth/mfrac_02.test/Makefile
+	tests/mathml_nemeth/mfrac_03.test/Makefile
+	tests/mathml_nemeth/mfrac_04.test/Makefile
+	tests/mathml_nemeth/mfrac_05.test/Makefile
+	tests/mathml_nemeth/mfrac_06.test/Makefile
+	tests/mathml_nemeth/mfrac_07.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_01.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_02.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_03.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_04.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_05.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_06.test/Makefile
+	tests/mathml_nemeth/mixed_scripts_07.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_01.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_02.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_03.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_04.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_05.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_06.test/Makefile
+	tests/mathml_nemeth/mmultiscripts_07.test/Makefile
+	tests/mathml_nemeth/mover_01.test/Makefile
+	tests/mathml_nemeth/mover_02.test/Makefile
+	tests/mathml_nemeth/mover_03.test/Makefile
+	tests/mathml_nemeth/mover_04.test/Makefile
+	tests/mathml_nemeth/mover_05.test/Makefile
+	tests/mathml_nemeth/mover_06.test/Makefile
+	tests/mathml_nemeth/mover_07.test/Makefile
+	tests/mathml_nemeth/mover_08.test/Makefile
+	tests/mathml_nemeth/mover_09.test/Makefile
+	tests/mathml_nemeth/mover_10.test/Makefile
+	tests/mathml_nemeth/mover_11.test/Makefile
+	tests/mathml_nemeth/mover_12.test/Makefile
+	tests/mathml_nemeth/mover_13.test/Makefile
+	tests/mathml_nemeth/mover_14.test/Makefile
+	tests/mathml_nemeth/mover_15.test/Makefile
+	tests/mathml_nemeth/mover_16.test/Makefile
+	tests/mathml_nemeth/mroot_01.test/Makefile
+	tests/mathml_nemeth/msqrt_01.test/Makefile
+	tests/mathml_nemeth/msqrt_02.test/Makefile
+	tests/mathml_nemeth/msqrt_03.test/Makefile
+	tests/mathml_nemeth/msub_01.test/Makefile
+	tests/mathml_nemeth/msub_02.test/Makefile
+	tests/mathml_nemeth/msub_03.test/Makefile
+	tests/mathml_nemeth/msub_04.test/Makefile
+	tests/mathml_nemeth/msub_05.test/Makefile
+	tests/mathml_nemeth/msub_06.test/Makefile
+	tests/mathml_nemeth/msub_07.test/Makefile
+	tests/mathml_nemeth/msub_08.test/Makefile
+	tests/mathml_nemeth/msub_09.test/Makefile
+	tests/mathml_nemeth/msub_10.test/Makefile
+	tests/mathml_nemeth/msubsup_01.test/Makefile
+	tests/mathml_nemeth/msubsup_02.test/Makefile
+	tests/mathml_nemeth/msubsup_03.test/Makefile
+	tests/mathml_nemeth/msubsup_04.test/Makefile
+	tests/mathml_nemeth/msubsup_05.test/Makefile
+	tests/mathml_nemeth/msubsup_06.test/Makefile
+	tests/mathml_nemeth/msubsup_07.test/Makefile
+	tests/mathml_nemeth/msup_01.test/Makefile
+	tests/mathml_nemeth/msup_02.test/Makefile
+	tests/mathml_nemeth/msup_03.test/Makefile
+	tests/mathml_nemeth/msup_04.test/Makefile
+	tests/mathml_nemeth/msup_05.test/Makefile
+	tests/mathml_nemeth/msup_06.test/Makefile
+	tests/mathml_nemeth/msup_07.test/Makefile
+	tests/mathml_nemeth/msup_08.test/Makefile
+	tests/mathml_nemeth/msup_09.test/Makefile
+	tests/mathml_nemeth/msup_10.test/Makefile
+	tests/mathml_nemeth/msup_11.test/Makefile
+	tests/mathml_nemeth/munder_01.test/Makefile
+	tests/mathml_nemeth/munder_02.test/Makefile
+	tests/mathml_nemeth/munder_03.test/Makefile
+	tests/mathml_nemeth/munder_04.test/Makefile
+	tests/mathml_nemeth/munder_05.test/Makefile
+	tests/mathml_nemeth/munder_06.test/Makefile
+	tests/mathml_nemeth/munder_07.test/Makefile
+	tests/mathml_nemeth/munderover_01.test/Makefile
+	tests/mathml_nemeth/munderover_02.test/Makefile
+	tests/mathml_nemeth/munderover_03.test/Makefile
 	tests/test_mathml_woluwe/Makefile
 	tests/test_mathml_woluwe/test_001.test/Makefile
 	tests/test_mathml_woluwe/test_002.test/Makefile
