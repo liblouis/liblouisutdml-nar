@@ -30,7 +30,7 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<liblouis.version>3.11.0-SNAPSHOT</liblouis.version>
+		<liblouis.version>3.11.0</liblouis.version>
 		<libxml2.version>2.7.3</libxml2.version>
 		<nar.arch.option/>
 		<nar.install_name.option/>
