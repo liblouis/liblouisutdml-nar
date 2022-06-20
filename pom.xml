@@ -257,6 +257,7 @@
 										<include name="**/bin/${nar.aol}/file2brl"/>
 										<include name="**/bin/${nar.aol}/file2brl.exe"/>
 										<include name="**/bin/${nar.aol}/*.dll"/>
+										<include name="**/bin/i586-mingw32msvc-gpp/*.dll"/>
 									</fileset>
 								</copy>
 							</tasks>
@@ -288,10 +289,11 @@
 								-e 's|\(^AM_LDFLAGS =\)\(.*\)$|\1 ${nar.rpath.option} \2|' \
 								../../../src/liblouisutdml/tools/Makefile.am > tools/Makefile.am
 								sed \
+								-e 's|^\(AM_CONDITIONAL(\[HAVE_HELP2MAN\],\)\(.*\)$|\1 \[false\])|' \
 								-e 's|^\(AC_INIT(liblouisutdml,\).*\(,.*\)$|\1 ${project.version}\2|' \
 								-e '/^AC_INIT.*$/a\
 								CFLAGS="$CFLAGS ${nar.arch.option} ${nar.jni.option} ${nar.libxml2.option}"\
-								export PKG_CONFIG_PATH="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig"\
+								export PKG_CONFIG_PATH="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig:${project.build.directory}/nar/lib/i586-mingw32msvc-gpp/shared/pkgconfig"\
 								' \
 								../../../src/liblouisutdml/configure.ac > configure.ac
 								sed \
@@ -427,7 +429,7 @@
 											<groupId>org.daisy.libs</groupId>
 											<artifactId>xml2</artifactId>
 											<version>${libxml2.version}</version>
-											<classifier>${nar.aol}-shared</classifier>
+											<classifier>i586-mingw32msvc-gpp-shared</classifier>
 											<type>nar</type>
 											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
@@ -453,11 +455,33 @@
 											<groupId>org.daisy.libs</groupId>
 											<artifactId>xml2</artifactId>
 											<version>${libxml2.version}</version>
-											<classifier>${nar.aol}-executable</classifier>
+											<classifier>i586-mingw32msvc-gpp-executable</classifier>
 											<type>nar</type>
 											<outputDirectory>${project.build.directory}/nar</outputDirectory>
 										</artifactItem>
 									</artifactItems>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>process-sources</id>
+								<phase>process-sources</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<tasks>
+										<replace dir="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig">
+											<replacefilter token="@NAR@" value="${project.build.directory}/nar"/>
+										</replace>
+										<replace dir="${project.build.directory}/nar/lib/i586-mingw32msvc-gpp/shared/pkgconfig">
+											<replacefilter token="@NAR@" value="${project.build.directory}/nar"/>
+										</replace>
+									</tasks>
 								</configuration>
 							</execution>
 						</executions>
@@ -481,45 +505,6 @@
 										#!/bin/sh
 										wine file2brl.exe -f .\\config.cfg input.xml
 									</script>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-		<profile>
-			<id>download-libxml2</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-dependency-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>unpack-libxml2</id>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>unpack</goal>
-								</goals>
-								<configuration>
-									<artifactItems>
-										<artifactItem>
-											<groupId>org.daisy.libs</groupId>
-											<artifactId>xml2</artifactId>
-											<version>${libxml2.version}</version>
-											<classifier>noarch</classifier>
-											<type>nar</type>
-											<outputDirectory>${project.build.directory}/nar</outputDirectory>
-										</artifactItem>
-										<artifactItem>
-											<groupId>org.daisy.libs</groupId>
-											<artifactId>xml2</artifactId>
-											<version>${libxml2.version}</version>
-											<classifier>${nar.aol}-shared</classifier>
-											<type>nar</type>
-											<outputDirectory>${project.build.directory}/nar</outputDirectory>
-										</artifactItem>
-									</artifactItems>
 								</configuration>
 							</execution>
 						</executions>
