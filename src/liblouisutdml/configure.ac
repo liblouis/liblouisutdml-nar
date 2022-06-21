@@ -1,20 +1,20 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.68)
-AC_INIT([liblouisutdml], [2.8.0], [liblouis-liblouisxml@freelists.org], [liblouisutdml], [http://www.liblouis.org])
+AC_INIT([liblouisutdml], [2.11.0], [liblouis-liblouisxml@freelists.org], [liblouisutdml], [http://www.liblouis.org])
 AC_CONFIG_SRCDIR([liblouisutdml/semantics.c])
 AC_CONFIG_HEADER([liblouisutdml/config.h])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall dist-zip])
 
 # increment if the interface has additions, changes, removals.
 LIBLOUISUTDML_CURRENT=10
 
 # increment any time the source changes; set to
 # 0 if you increment CURRENT
-LIBLOUISUTDML_REVISION=0
+LIBLOUISUTDML_REVISION=2
 
 # increment if any interfaces have been added; set to 0
 # if any interfaces have been changed or removed. removal has
@@ -37,9 +37,10 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 # AC_PROG_RANLIB
-AC_ISC_POSIX
-AC_LIBTOOL_WIN32_DLL
+AM_PROG_AR
 AM_PROG_LIBTOOL
+# see https://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+LT_INIT([win32-dll])
 
 # GNU help2man creates man pages from --help output; in many cases,
 # this is sufficient, and obviates the need to maintain man pages
@@ -48,7 +49,7 @@ AM_PROG_LIBTOOL
 AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
 AM_CONDITIONAL([HAVE_HELP2MAN], [test x$HELP2MAN = xhelp2man])
 
-PKG_CHECK_MODULES(BASE_DEPENDENCIES, [liblouis >= 3.0.0, libxml-2.0])
+PKG_CHECK_MODULES(BASE_DEPENDENCIES, [liblouis >= 3.20.0, libxml-2.0])
 
 # Checks for libraries.
 
