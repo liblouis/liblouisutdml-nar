@@ -1,6 +1,6 @@
 MVN := mvn
 COMPOSE := docker-compose
-VERSION := 2.8.0-p1-SNAPSHOT
+VERSION := 2.11.0-p1-SNAPSHOT
 
 TARGET_NAR_LINUX_32 := $(addprefix target/nar/louisutdml-$(VERSION)-i386-Linux-gpp-,executable shared)
 TARGET_NAR_LINUX_64 := $(addprefix target/nar/louisutdml-$(VERSION)-amd64-Linux-gpp-,executable shared)
