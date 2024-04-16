@@ -250,14 +250,17 @@
 						</goals>
 						<configuration>
 							<tasks>
-								<copy todir="${project.build.directory}/test-classes" flatten="true">
+								<copy todir="${project.build.directory}/test-classes" flatten="true" overwrite="true">
 									<fileset dir="${project.build.directory}/nar">
-										<include name="**/lib/${nar.aol}/shared/*.so"/>
-										<include name="**/lib/${nar.aol}/shared/*.dylib"/>
-										<include name="**/bin/${nar.aol}/file2brl"/>
-										<include name="**/bin/${nar.aol}/file2brl.exe"/>
-										<include name="**/bin/${nar.aol}/*.dll"/>
-										<include name="**/bin/i586-mingw32msvc-gpp/*.dll"/>
+										<include name="lib/${nar.aol}/shared/liblouis.so"/>
+										<include name="lib/${nar.aol}/shared/liblouis.dylib"/>
+										<include name="bin/${nar.aol}/liblouis.dll"/>
+										<include name="bin/i586-mingw32msvc-gpp/libxml2.dll"/>
+										<include name="louisutdml-${project.version}-${nar.aol}-shared/lib/${nar.aol}/shared/liblouisutdml.dylib"/>
+										<include name="louisutdml-${project.version}-${nar.aol}-shared/lib/${nar.aol}/shared/liblouisutdml.so"/>
+										<include name="louisutdml-${project.version}-${nar.aol}-executable/bin/${nar.aol}/file2brl"/>
+										<include name="louisutdml-${project.version}-${nar.aol}-executable/bin/${nar.aol}/file2brl.exe"/>
+										<include name="louisutdml-${project.version}-${nar.aol}-executable/bin/${nar.aol}/liblouisutdml.dll"/>
 									</fileset>
 								</copy>
 							</tasks>
@@ -282,6 +285,20 @@
 							<workDir>${project.build.directory}/generated-sources/liblouisutdml</workDir>
 							<script>
 								#!/bin/sh
+								case ${nar.aol} in
+								amd64-Linux-gpp)
+									PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig
+									;;
+								i386-Linux-gpp)
+									PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig:${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig
+									;;
+								i686-w64-mingw32-gpp)
+									PKG_CONFIG_PATH=${project.build.directory}/nar/lib/i586-mingw32msvc-gpp/shared/pkgconfig:${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig
+									;;
+								*)
+									PKG_CONFIG_PATH=${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig
+									;;
+								esac
 								sed \
 								-e 's|^\(liblouisutdml_la_LDFLAGS =\)\(.*\)$|\1 ${nar.install_name.option} ${nar.rpath.option} -avoid-version \2|' \
 								../../../src/liblouisutdml/liblouisutdml/Makefile.am > liblouisutdml/Makefile.am
@@ -293,7 +310,7 @@
 								-e 's|^\(AC_INIT(liblouisutdml,\).*\(,.*\)$|\1 ${project.version}\2|' \
 								-e '/^AC_INIT.*$/a\
 								CFLAGS="$CFLAGS ${nar.arch.option} ${nar.jni.option} ${nar.libxml2.option}"\
-								export PKG_CONFIG_PATH="${project.build.directory}/nar/lib/${nar.aol}/shared/pkgconfig:${project.build.directory}/nar/lib/i586-mingw32msvc-gpp/shared/pkgconfig"\
+								export PKG_CONFIG_PATH="'$PKG_CONFIG_PATH'"\
 								' \
 								../../../src/liblouisutdml/configure.ac > configure.ac
 								sed \
@@ -317,6 +334,13 @@
 							<script>
 								#!/bin/sh
 								chmod +x file2brl
+								if [ "${nar.aol}" = i386-Linux-gpp ]; then
+									# when inside Docker container and about to run the 32-bit version, first copy the files into
+									# a temporary directory because in this case stat() does not work on files within mounted volume
+									mkdir -p /tmp/test-file2brl
+									cp * /tmp/test-file2brl
+									cd /tmp/test-file2brl
+								fi
 								./file2brl -f ./config.cfg input.xml
 							</script>
 						</configuration>
