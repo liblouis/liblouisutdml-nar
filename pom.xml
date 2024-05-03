@@ -30,7 +30,7 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<liblouis.version>3.21.0-p1</liblouis.version>
+		<liblouis.version>3.21.0-p2</liblouis.version>
 		<libxml2.version>2.7.3</libxml2.version>
 		<nar.arch.option/>
 		<nar.install_name.option/>
@@ -55,7 +55,7 @@
 				<plugin>
 					<groupId>com.github.maven-nar</groupId>
 					<artifactId>nar-maven-plugin</artifactId>
-					<version>3.5.3-SNAPSHOT</version>
+					<version>3.5.3-SNAPSHOT</version> <!-- depends on "bertfrees" branch -->
 				</plugin>
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
@@ -90,6 +90,10 @@
 					<artifactId>maven-gpg-plugin</artifactId>
 					<version>1.4</version>
 				</plugin>
+				<plugin>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.3</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
@@ -105,18 +109,21 @@
 							<type>shared</type>
 						</library>
 					</libraries>
+					<linker>
+						<name>g++</name>
+					</linker>
 				</configuration>
 				<executions>
 					<!--
-					    validate: nar-validate
-					    initialize: nar-download
-					    generate-sources: nar-unpack
-					    process-sources: nar-gnu-configure
-					    generate-resources: nar-system-generate, nar-vcproj
-					    process-resources: nar-resources, nar-gnu-resources
-					    compile: nar-javah, nar-gnu-make, nar-compile
+						validate: nar-validate
+						initialize: nar-download
+						generate-sources: nar-unpack
+						process-sources: nar-gnu-configure
+						generate-resources: nar-system-generate, nar-vcproj
+						process-resources: nar-resources, nar-gnu-resources
+						compile: nar-javah, nar-gnu-make, nar-compile
 						process-classes: nar-gnu-process, nar-process-libraries
-					    generate-test-sources: nar-test-unpack
+						generate-test-sources: nar-test-unpack
 						test-compile: nar-testCompile
 						test: nar-test
 						prepare-package: nar-prepare-package
@@ -199,6 +206,7 @@
 									<directory>${project.build.directory}/nar/gnu/${nar.aol}/target/lib</directory>
 									<includes>
 										<include>*.dll.a</include>
+										<include>liblouisutdml.dylib</include>
 										<include>pkgconfig/*</include>
 									</includes>
 								</resource>
